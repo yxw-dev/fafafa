@@ -4,7 +4,7 @@ import os
 import time
 import glob
 from cv_show import *
-from order import get_port
+from usb_pi import get_port
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
