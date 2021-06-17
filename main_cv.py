@@ -2,7 +2,9 @@ import cv2
 import sys
 import os
 import time
+import glob
 from cv_show import *
+from order import get_port
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -32,6 +34,8 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
         self.horizontalSlider.valueChanged.connect(self.update)
         self.setFocus()
         self.init_time.start(100)
+        self.cam_number = []
+        self.get_pixmap_flag = 0
 
 
     def my_init(self):
@@ -48,6 +52,17 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
         temp_pic = QPixmap(path + '/image/操作说明图.png').scaled(self.label_11.width(), self.label_11.height())
         self.label_11.setPixmap(temp_pic)
         self.init_time.stop()
+
+        #获取相机编号
+        self.cam_number = get_port()
+
+        #检查保存图像路径是否存在
+        save_path = path + '/图片'
+        if os.path.exists(save_path):
+            print ('路径不存在')
+        else:
+            os.makedirs(save_path)
+
     #键盘监控事件
     def keyPressEvent(self,event):
         if(event.key() == Qt.Key_Q):
@@ -56,6 +71,8 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
             self.start_grap()
         if (event.key() == Qt.Key_B):
             self.start_grap2()
+        if(event.key() == Qt.Key_C):
+            self.get_pixmap_flag = 2
         if(event.key() == Qt.Key_A):
             self.horizontalSlider.setValue(self.horizontalSlider.value() - 1)
             self.update()
@@ -143,7 +160,8 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
     def start_grap(self):
         self.start_time1 = time.time()
         self.frame1=0
-        self.cap1 = cv2.VideoCapture(1 + cv2.CAP_DSHOW)
+        self.cap1 = cv2.VideoCapture(self.cam_number[0])
+        #self.cap1 = cv2.VideoCapture(1 + cv2.CAP_DSHOW)
         self.cam_time.start(60)
         self.label_5.setText("正面相机：运行")
         self.pushButton1.resize(1, self.label.height())
@@ -154,7 +172,8 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
     def start_grap2(self):
         self.start_time2 = time.time()
         self.frame2=0
-        self.cap2 = cv2.VideoCapture(2+ cv2.CAP_DSHOW)
+        self.cap2 = cv2.VideoCapture(self.cam_number[1])
+        #self.cap2 = cv2.VideoCapture(2+ cv2.CAP_DSHOW)
         self.cam_time2.start(60)
         self.label_7.setText("侧面相机：运行")
         self.pushButton3.resize(self.label_2.width(), 1)
@@ -188,6 +207,16 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
             self.start_time1 = end_time1
             self.label_6.setText('帧率(1):' + str(self.frame1))
             self.frame1 = 0
+        # 保存一帧图像
+        if(self.get_pixmap_flag == 2):
+            file_number = glob.glob(os.path.dirname(os.path.abspath(__file__))+'/图片/'+'*.jpg')
+            if(len(file_number) == 0):
+                file_name = os.path.dirname(os.path.abspath(__file__)) + '/图片/' + "1" + "_f.jpg"
+                pixmap.save(file_name);
+                return
+            file_name = os.path.dirname(os.path.abspath(__file__))+'/图片/' + str(len(file_number)+1) + "_f.jpg"
+            pixmap.save(file_name);
+            self.get_pixmap_flag = 1;
 
     def show_pic2(self):
         ret_2, img_2 = self.cap2.read()
@@ -211,6 +240,16 @@ class MyMainWindow(QMainWindow , Ui_MainWindow):
             self.start_time2 = end_time2
             self.label_8.setText('帧率(2):' + str(self.frame2))
             self.frame2 = 0
+        #保存一帧图像
+        if (self.get_pixmap_flag == 1):
+            file_number = glob.glob(os.path.dirname(os.path.abspath(__file__)) + '/图片/' + '*.jpg')
+            if (len(file_number) == 0):
+                file_name = os.path.dirname(os.path.abspath(__file__)) + '/图片/' + "1" + "_b.jpg"
+                pixmap.save(file_name);
+                return
+            file_name = os.path.dirname(os.path.abspath(__file__)) + '/图片/' + str(len(file_number) + 1) + "_b.jpg"
+            pixmap.save(file_name);
+            self.get_pixmap_flag = 0;
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
